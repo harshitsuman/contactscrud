@@ -4,6 +4,7 @@ var Joi = require('joi');
 var formidable = require('formidable');
 const fs = require('fs');
 const path = require('path');
+const uuid = require('uuid/v4');
 const userModel = require('../../Model/Account/userModel');
 const userService = require('../../Service/userService');
 const userSchema = require('../../Model/joiValidation');
@@ -27,7 +28,7 @@ module.exports ={
                     const token = await jwt.sign(JSON.parse(JSON.stringify(resultPass)), process.env.jwt_key);
                     
                     // res.header['x-auth'] = token;
-                    res.json(token);
+                    res.json({token});
                 }
                 else {
                     throw new Error("Username or password missmatched....!!")
@@ -102,34 +103,26 @@ module.exports ={
     userProfile : async (req,res,next) => {
 
         try {
-
+            let result ;
             if(req.params._id) {
 
-                const result = await userModel.findById({_id : req.params._id},'userName email firstName lastName');
+                result = await userModel.findById({_id : req.params._id},'userName email firstName lastName');
 
-                res.status(200)
-                .json({
-                    "status": 200,
-                    "success": true,
-                    "message" : "Data retrieved successfully based on id",
-                    "value":  result
-                })
-                .end();
             }
             else{
 
-                const result = await userModel.find({},'userName email firstName lastName' );
-                res.status(200)
-                .json({
-                    "status": 200,
-                    "success": true,
-                    "message" : "Data retrieved successfully",
-                    "value":  result
-                })
-                .end();
+                result = await userModel.find({},'userName email firstName lastName' );
+            
             }
             
-            // res.send(result); //who has looged in // profile photo
+            return res.status(200)
+            .json({
+                "status": 200,
+                "success": true,
+                "message" : "Data retrieved successfully based on id",
+                "value":  result
+            })
+
         }
 
         catch(err){
@@ -144,5 +137,59 @@ module.exports ={
             res.status(500).send(err);
         };
 
+    },
+
+    uploadPhoto : async (req, res, next) => {
+
+        var form = new formidable.IncomingForm();
+        form.parse(req, async function (err, fields, files) {
+
+            var file = files.file;
+            var _id = fields._id;
+            var FileSize = file.size;
+            var FileExtension = path.extname(file.name);
+
+            Joi.validate({_id,FileSize,FileExtension},{
+                _id : Joi.string().required().label('UserId required'),
+                FileSize : Joi.number().integer().max(4 * 1024 * 1024).required().label('Max FileSize 4MB'),
+                FileExtension : Joi.string().valid(['.jpg', '.jpeg','.png','.PNG','.JPEG','.JPG']).required().label("'.jpg', '.jpeg','.png' allowed")
+            }).then(async () => {
+            
+           
+                try {
+                    if (fs.lstatSync(path.join(__dirname + process.env.IMAGE_UPLOAD_PATH)).isDirectory());
+                    else
+                    fs.mkdirSync(path.join(__dirname + process.env.IMAGE_UPLOAD_PATH));
+                } catch (err) {
+                    
+                    fs.mkdirSync(path.join(__dirname + process.env.IMAGE_UPLOAD_PATH));
+              
+                  }
+                  
+                  var filepath = path.join(__dirname +  process.env.IMAGE_UPLOAD_PATH + "/"+ uuid() +"_"  + file.name);
+                 
+                  fs.writeFileSync(filepath,fs.readFileSync(file.path));
+
+                  res.send({
+                      status : 200,
+                      success : true,
+                      message : "Photo uploaded successfully"
+                  })
+                }
+            ).catch(err => {
+                res.status(422)
+                    .json({
+                      "status": 422
+                     , "success": false
+                     , "message": error.details[0].context.label
+                     , "error": error.details[0].message
+        
+                     });
+        
+            })
+            
+        })
+
     }
+    
 }

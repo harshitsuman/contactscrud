@@ -4,6 +4,9 @@ const auth = require('../../Middleware/authentication');
 
 router.post('/signin',userController.signIn);
 router.post('/signup',userController.signUp);
-router.get(['/profile','/profile/:_id'], auth, userController.userProfile);
+router.post('/uploadphoto',auth,userController.uploadPhoto);
+router.get('/profile/:_id?', auth, userController.userProfile);
+
+
 
 module.exports = router;

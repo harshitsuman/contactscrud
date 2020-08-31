@@ -3,6 +3,7 @@ require('dotenv').config();
 require('./db/connection');
 const express = require('express');
 var cors = require('cors')   
+const path = require('path');
 
 var app = express();
 
@@ -26,6 +27,8 @@ app.use(function (req, res, next) {
     next(createError(404,`Path '${req.url}' Not Found !!`));
   });
   
+// Static path
+app.use('/static', express.static(path.join(__dirname, 'public'))); 
   
 /* Global ERROR HANDLER */
 app.use(function (err, req, res, next) {

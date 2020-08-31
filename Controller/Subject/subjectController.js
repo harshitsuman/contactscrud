@@ -18,25 +18,22 @@ module.exports = {
             var object = new subjectModel(inputData)
 
                 object =  await object.save();
-                res.status(201)
+                return res.status(201)
                     .json({
                         "status": 201,
                         "success": true,
                         "message" : "Subject inserted successfully",
                         "value":  object
                     })
-                    .end();
-                // res.send(object)
             }
             else {
-                res.status(422)
+                return res.status(422)
                     .json({
                         "status": 422
                         , "success": false
                         , "message":  validationerror.error.details[0].context.label
                         , "error": "Input Validation Error."
                     })
-                    .end();
             }
         }
         catch(err){
@@ -57,6 +54,7 @@ module.exports = {
 
         try{
             var validationerror = Joi.validate(inputData, subjectSchema.marksSchema);
+            
                 if(validationerror.error == null){
                 
                     var object = new marksModel(inputData)
